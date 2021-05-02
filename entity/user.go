@@ -1,16 +1,12 @@
 /*
 
  */
-package entity
+package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
-	"io/ioutil"
-	"os"
 )
-
-var DB *sql.DB
 
 //The basics of what is collected by the user.
 type User struct {
@@ -25,6 +21,10 @@ type User struct {
 type Profile struct {
 	Org  string
 	PKey string
+}
+
+type User_Cert struct {
+	DB *sql.DB
 }
 
 func create_profile() (*Profile, error) {
@@ -47,27 +47,30 @@ func create_user() (*User, error) {
 	return k, nil
 }
 
-func decode_json(file_name string, filter func(map[string]interface{}) bool) []map[string]interface{} {
-	file, _ := os.Open(file_name)
-	defer file.Close()
-
-	decoder := json.NewDecover(file)
-	filtered_data := []map[string]interface{}{}
-	decoder.Token()
-
-	data := map[string]interface{}{}
-	for decoder.More() {
-		decoder.Decode(&data)
-		if filter(data) {
-			filtered_data = append(filtered_data, data)
-		}
+func (u User_Cert) user_base() ([]User, error) {
+	rows, err := u.DB.Query("SELECT * FROM users")
+	if err != nil {
+		return nil, err
 	}
-	return filtered_data
-}
+	defer rows.Close()
 
-//Our Method to verify our users upon login. Our process will be the unmarshal the data, and determine whether the password is correct
-func (u *User) verify_user(key *User, token string) bool {
-	json := decode_json(token, func(data map[string]interface{}))
+	var user []User
+
+	for rows.Next() {
+		var user User
+
+		err := rows.Scan{&user.ID, &user.Email, &user.Password, &user.Username, &user.PublicKey}
+		if err != nil {
+			return nil, err
+		}
+
+		user = append(users, user)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return user, nil
+
 }
 
 func main() {

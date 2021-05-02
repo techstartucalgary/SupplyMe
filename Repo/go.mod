@@ -11,4 +11,5 @@ require (
 	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/ugorji/go/codec v1.2.4
+	golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c // indirect
 )
